@@ -19,6 +19,7 @@ fibonacci:
     mov r4,#1                   @Fn-2
     mov r5,#1                   @Fn-1
     mov r6,#1                   @Fn
+    sub r0,r0,#1
 loop:
     subs r0,r0,#1
     beq exi
