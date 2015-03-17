@@ -20,10 +20,9 @@ fibonacci:
 
     clz r4,r0                   @count leading zero of r0
                                 @really surprised this operation exists
-    rsbs r4,r4,#31              @r4 = 31-r4 ("non-zero" part)
-    beq exit                    @when r0 = 1
-loop:
-    
+    rsbs r4,r4,#30              @(start looking second digit ,skip m=0)
+    blt exit                    @when r0 = 1 ,skip
+loop:    
     @doubling Fibonacci here
     rsb r7,r5,r6,LSL #1     @r7 = r6<<1-r5
     mul r7,r5,r7            @r7 = r5*r7 = r5*(2*r6-r5) = F(2m)
@@ -35,8 +34,6 @@ loop:
     mov r5,r7
     mov r6,r8
 
-    sub r4,r4,#1
-
     @advance one conditionally
     lsr r7,r0,r4
     tst r7,#1
@@ -46,6 +43,7 @@ loop:
     mov r6,r7               @r8 = F(m+2) ,m++
 no_adv:
     cbz r4,exit
+    sub r4,r4,#1
     b loop
 
 exit:
