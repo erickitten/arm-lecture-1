@@ -44,6 +44,13 @@ qemu: fibseq
 	@sleep 1
 	@yes 40 | $(call QEMU_CMD)
 	@sleep 1
-	@yes 46 | $(call QEMU_CMD)
+	@yes 50 | $(call QEMU_CMD)
 	@sleep 1
-
+	@yes 60 | $(call QEMU_CMD)
+	@sleep 1
+	@yes 70 | $(call QEMU_CMD)
+	@sleep 1
+	@yes 80 | $(call QEMU_CMD)
+	@sleep 1
+	@yes 90 | $(call QEMU_CMD)
+	@sleep 1

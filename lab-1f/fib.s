@@ -9,14 +9,16 @@
 	.type fibonacci, function
 
 fibonacci:
-	push { r4, r5, r6, r7, r8, lr}
+	push { r4, r5, r6, r7, r8, r10, r11, lr}
 
     cmp r0,#0                   @n<=0, f(n)=0
     ble .L3
 
     @invariants ,m(current Fibonacci) start as 1
-    mov r5,#1                   @r5 = F(m)
-    mov r6,#1                   @r6 = F(m+1)
+    mov r5,#1                   @a = [r6,r5] = F(m)
+    mov r6,#0
+    mov r7,#1                   @b = [r8,r7] = F(m+1)
+    mov r8,#0
 
     clz r4,r0                   @count leading zero of r0
                                 @really surprised this operation exists
@@ -24,23 +26,43 @@ fibonacci:
     blt exit                    @when r0 = 1 ,skip
 loop:    
     @doubling Fibonacci here
-    rsb r7,r5,r6,LSL #1     @r7 = r6<<1-r5
-    mul r7,r5,r7            @r7 = r5*r7 = r5*(2*r6-r5) = F(2m)
+    @use[r3,r2] & [r11,r10] & r1 as temp variable
 
-    mul r8,r5,r5            @r8 = r5^2
-    mla r8,r6,r6,r8         @r8 = r6^2 + r5^2 = F(2m+1)
+    lsl r1,r8,#1            @rsc not supportes in thumb
+                            @can not barrel shift r8 on substraction
+    rsbs r2,r5,r7,LSL #1    @temp = (b<<1)-a
+    sbc r3,r1,r6
+    add r3,r3,r7,LSR #30    @add r7 msb to high word for shift
+
+    mul r11,r5,r3           @temp2 = a*temp = a*(2*b-a) = F(2m)
+    mla r11,r6,r2,r11
+    umull r10,r11,r5,r2     @now, [r11,r10] = F(2m)
+
+
+    mul r1,r6,r5            @temp = a^2
+    umull r2,r3,r5,r5
+    add r3,r3,r1,LSL #1
+
+    mul r1,r8,r7            @temp = b^2 + a^2 = F(2m+1)
+    umlal r2,r3,r7,r7
+    add r3,r3,r1,LSL #1     @now, [r3,r2] = F(2m+1)
 
     @update a,b : m*=2
-    mov r5,r7
-    mov r6,r8
+    mov r5,r10
+    mov r6,r11
+    mov r7,r2
+    mov r8,r3
 
     @advance one conditionally
-    lsr r7,r0,r4
-    tst r7,#1
+    lsr r1,r0,r4
+    tst r1,#1
     beq no_adv
-    add r7,r5,r6
-    mov r5,r6               @r7 = F(m+1)
-    mov r6,r7               @r8 = F(m+2) ,m++
+    adds r2,r5,r7
+    adc r3,r6,r8
+    mov r5,r7               @a = F(m+1)
+    mov r6,r8                   
+    mov r7,r2               @b = F(m+2) ,m++
+    mov r8,r3
 no_adv:
     cbz r4,exit
     sub r4,r4,#1
@@ -48,10 +70,11 @@ no_adv:
 
 exit:
     mov r0,r5
-	pop { r4, r5, r6, r7, r8, pc}
+    mov r1,r6
+	pop { r4, r5, r6, r7, r8, r10, r11, pc}
 .L3:
 	mov r0, #0			            @ R0 = 0
-	pop { r4, r5, r6, r7, r8, pc}
+	pop { r4, r5, r6, r7, r8, r10, r11, pc}
 
 	.size fibonacci, .-fibonacci
 	.end
