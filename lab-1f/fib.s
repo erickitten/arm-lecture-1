@@ -28,30 +28,29 @@ loop:
     @doubling Fibonacci here
     @use[r3,r2] & [r11,r10] & r1 as temp variable
 
+    @calculate new F(2m)
     lsl r1,r8,#1            @rsc not supportes in thumb
                             @can not barrel shift r8 on substraction
     rsbs r2,r5,r7,LSL #1    @temp = (b<<1)-a
     sbc r3,r1,r6
-    add r3,r3,r7,LSR #30    @add r7 msb to high word for shift
+    add r3,r3,r7,LSR #31    @add r7 msb to high word for shift
 
     mul r11,r5,r3           @temp2 = a*temp = a*(2*b-a) = F(2m)
     mla r11,r6,r2,r11
     umull r10,r11,r5,r2     @now, [r11,r10] = F(2m)
 
+    @f(2m+1)
+    mul r1,r8,r7            @temp = a^2
+    umull r7,r8,r7,r7       @result go directly into b
+    add r8,r8,r1,LSL #1
+     
+    mul r1,r6,r5            @temp = b^2 + a^2 = F(2m+1)
+    umlal r7,r8,r5,r5
+    add r8,r8,r1,LSL #1     @now,b = [r8,r7] = F(2m+1)
 
-    mul r1,r6,r5            @temp = a^2
-    umull r2,r3,r5,r5
-    add r3,r3,r1,LSL #1
-
-    mul r1,r8,r7            @temp = b^2 + a^2 = F(2m+1)
-    umlal r2,r3,r7,r7
-    add r3,r3,r1,LSL #1     @now, [r3,r2] = F(2m+1)
-
-    @update a,b : m*=2
+    @update a : m*=2 (b already updated)
     mov r5,r10
     mov r6,r11
-    mov r7,r2
-    mov r8,r3
 
     @advance one conditionally
     lsr r1,r0,r4
@@ -64,7 +63,7 @@ loop:
     mov r7,r2               @b = F(m+2) ,m++
     mov r8,r3
 no_adv:
-    cbz r4,exit
+    cbz r4,exit             @operation complete
     sub r4,r4,#1
     b loop
 
